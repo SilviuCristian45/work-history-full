@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from "uuid";
 
 export interface WorkRegistrationData {
   employeeCNP: string
-  employerAddress: string
   position: string
   salary: string
   startDate: string
@@ -43,9 +42,10 @@ export class BlockchainClient {
         data.employeeCNP,
         data.position,
         ethers.parseUnits(data.salary, 0), // Convert salary to BigInt
-        new Date(data.startDate).getTime(),
-        data.endDate ? new Date(data.endDate).getTime() : 0,
-        txHash
+        Math.floor(new Date(data.startDate).getTime() / 1000),
+        data.endDate ? Math.floor(new Date(data.endDate).getTime() / 1000) : 0,
+        txHash,
+        { gasLimit: 2_000_000 } // ajustează după nevoie
       )
 
       console.log("[v0] Transaction sent. Hash:", tx.hash)

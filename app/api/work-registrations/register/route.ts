@@ -51,14 +51,11 @@ export async function POST(request: Request) {
     const blockchainClient = getEmployerBlockchainClient()
     const transaction = await blockchainClient.registerWork({
       employeeCNP,
-      employerAddress: user.id,
       position,
       salary: salary.toString(),
       startDate,
       endDate,
     })
-
-    const mockTransactionHash = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`
 
     // Store metadata in database
     const { data: registration, error: insertError } = await supabase
@@ -70,7 +67,7 @@ export async function POST(request: Request) {
         salary: Number.parseFloat(salary),
         start_date: startDate,
         end_date: endDate || null,
-        tx_hash: mockTransactionHash,
+        tx_hash: transaction.hash,
         status: "pending",
       })
       .select()
@@ -83,7 +80,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         registration,
-        transactionHash: mockTransactionHash,
+        transactionHash: transaction.hash,
       },
       { status: 201 },
     )
