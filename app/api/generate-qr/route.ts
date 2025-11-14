@@ -4,6 +4,85 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
+/**
+ * @swagger
+ * /generate-qr:
+ *   post:
+ *     summary: Generate QR code for user work history PDF
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userFullName:
+ *                 type: string
+ *                 example: "John Doe"
+ *               history:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "ff491473-ab65-4485-a32e-174ce7f53913"
+ *                     employee_cnp:
+ *                       type: string
+ *                       example: "5000612124949"
+ *                     employer_id:
+ *                       type: string
+ *                       example: "3cd0d5e8-5ef3-4de6-9d91-d5fb8e492030"
+ *                     position:
+ *                       type: string
+ *                       example: "DEVELOPER"
+ *                     salary:
+ *                       type: number
+ *                       example: 1233231
+ *                     start_date:
+ *                       type: string
+ *                       format: date
+ *                       example: "2025-11-06"
+ *                     end_date:
+ *                       type: string
+ *                       format: date
+ *                       example: "2025-11-28"
+ *                     tx_hash:
+ *                       type: string
+ *                       example: "21313"
+ *                     status:
+ *                       type: string
+ *                       example: "approved"
+ *                     employer:
+ *                       type: object
+ *                       properties:
+ *                         full_name:
+ *                           type: string
+ *                           example: "firma x"
+ *                         email:
+ *                           type: string
+ *                           example: "silviu.dinca1206@stud.acs.upb.ro"
+ *                     authority:
+ *                       type: object
+ *                       properties:
+ *                         full_name:
+ *                           type: string
+ *                           example: "21e2e1 sadqw"
+ *     responses:
+ *       200:
+ *         description: QR code base64
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 qrBase64:
+ *                   type: string
+ *                   example: "data:image/png;base64,iVBORw0KGgo..."
+ *       500:
+ *         description: Internal server error
+ */
+
 export async function POST(req: Request) {
   try {
   const data  = await req.json()
