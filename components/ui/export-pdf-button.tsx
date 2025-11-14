@@ -8,10 +8,45 @@ import autoTable from "jspdf-autotable"
 export default function ExportPdfButton({ history, userFullName }: { history: any[], userFullName: string }) {
 
   const handleExportWorkHistoryAsPdf = () => {
-   console.log("Export PDF clicked!")
+    console.log("Export PDF clicked!")
     console.log("History entries:", history)
+
+    const approved = history.filter((e) => e.status === "approved")
+
+    // total salary
+    const totalSalary = approved.reduce(
+      (sum, e) => sum + (parseFloat(e.salary) || 0),
+      0
+    )
+
+    // total months worked
+    const totalMonths = approved.reduce((months, e) => {
+      const start = new Date(e.start_date)
+      const end = e.end_date ? new Date(e.end_date) : new Date()
+
+      const diff =
+        (end.getFullYear() - start.getFullYear()) * 12 +
+        (end.getMonth() - start.getMonth())
+
+      return months + Math.max(diff, 0)
+    }, 0)
+
+    const totalYears = (totalMonths / 12).toFixed(1)
+    const avgMonthlySalary = totalMonths > 0 ? Math.round(totalSalary / totalMonths) : 0
+
     // Aici poți genera PDF folosind jspdf/autotable
-     const doc = new jsPDF()
+    const doc = new jsPDF()
+
+    // ---- 2. Titlu ----
+    doc.setFontSize(16)
+    doc.text(`Istoric muncă - ${userFullName}`, 14, 20)
+
+    // ---- 3. Statistici sub titlu ----
+    doc.setFontSize(12)
+    doc.text(`Total ani lucrați: ${totalYears}`, 14, 30)
+    doc.text(`Total luni lucrațe: ${totalMonths}`, 14, 40)
+    doc.text(`Salariu mediu lunar: ${avgMonthlySalary.toLocaleString("ro-RO")} RON`, 14, 48)
+    
 
     // Titlu
     doc.setFontSize(16)
@@ -28,8 +63,9 @@ export default function ExportPdfButton({ history, userFullName }: { history: an
       entry.tx_hash ? entry.tx_hash.slice(0, 10) + "..." : "",
     ])
 
+
     autoTable(doc, {
-      startY: 30,
+      startY: 50,
       head: [
         ["Angajator", "Funcție", "Salariu", "Data început", "Data sfârșit", "Status", "Tx Hash"]
       ],

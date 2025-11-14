@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { LogOut, Briefcase, DollarSign, Calendar } from "lucide-react"
 import ExportPdfButton from "@/components/ui/export-pdf-button"
+import GetQrButton from "@/components/ui/get-qr-button"
 
 
 export default async function EmployeePage() {
@@ -124,7 +125,10 @@ export default async function EmployeePage() {
     <CardTitle>Work History</CardTitle>
     <CardDescription>Your complete work registration history stored on blockchain</CardDescription>
   </div>
- <ExportPdfButton history={history} userFullName={userData.full_name} />
+  <div>
+    <GetQrButton userFullName={userData.full_name} history={history} />
+    <ExportPdfButton history={history} userFullName={userData.full_name} />
+  </div>
 
 </CardHeader>
           <CardContent>
