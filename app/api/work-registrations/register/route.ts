@@ -1,3 +1,4 @@
+import { getEmployerBlockchainClient } from "@/lib/blockchain/client"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -46,16 +47,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Employee not found or does not belong to this employer" }, { status: 404 })
     }
 
-    // Register on blockchain
-    // const blockchainClient = getBlockchainClient()
-    // const transaction = await blockchainClient.registerWork({
-    //   employeeCNP,
-    //   employerAddress: user.id,
-    //   position,
-    //   salary: salary.toString(),
-    //   startDate,
-    //   endDate,
-    // })
+    //Register on blockchain
+    const blockchainClient = getEmployerBlockchainClient()
+    const transaction = await blockchainClient.registerWork({
+      employeeCNP,
+      employerAddress: user.id,
+      position,
+      salary: salary.toString(),
+      startDate,
+      endDate,
+    })
 
     const mockTransactionHash = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`
 

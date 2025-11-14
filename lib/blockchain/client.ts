@@ -1,6 +1,7 @@
-import { ethers } from "ethers"
+import { Block, ethers } from "ethers"
 import { blockchainConfig } from "./config"
-import { CONTRACT_ABI } from "./contract.abi.ts"
+import { CONTRACT_ABI } from "./contract.abi"
+import { v4 as uuidv4 } from "uuid";
 
 export interface WorkRegistrationData {
   employeeCNP: string
@@ -22,16 +23,11 @@ export class BlockchainClient {
   private wallet: ethers.Wallet
   private contract: ethers.Contract
 
-  constructor() {
-    // Initialize provider
-    this.provider = new ethers.JsonRpcProvider(blockchainConfig.rpcUrl)
-
-    // Initialize wallet
-    this.wallet = new ethers.Wallet(blockchainConfig.walletPrivateKey, this.provider)
-
-    // Initialize contract
-    this.contract = new ethers.Contract(blockchainConfig.contractAddress, CONTRACT_ABI, this.wallet)
-  }
+ constructor(privateKey: string) {
+  this.provider = new ethers.JsonRpcProvider(blockchainConfig.rpcUrl);
+  this.wallet = new ethers.Wallet(privateKey, this.provider);
+  this.contract = new ethers.Contract(blockchainConfig.contractAddress, CONTRACT_ABI, this.wallet);
+}
 
   /**
    * Register work entry on blockchain
@@ -40,14 +36,16 @@ export class BlockchainClient {
     try {
       console.log("[v0] Registering work on blockchain:", data)
 
-      // Call smart contract method
+      const uniqueId = uuidv4();
+      const txHash = ethers.keccak256(ethers.toUtf8Bytes(uniqueId));
+
       const tx = await this.contract.registerWork(
         data.employeeCNP,
-        data.employerAddress,
         data.position,
         ethers.parseUnits(data.salary, 0), // Convert salary to BigInt
         new Date(data.startDate).getTime(),
         data.endDate ? new Date(data.endDate).getTime() : 0,
+        txHash
       )
 
       console.log("[v0] Transaction sent. Hash:", tx.hash)
@@ -141,12 +139,19 @@ export class BlockchainClient {
   }
 }
 
-// Singleton instance
-let blockchainClient: BlockchainClient | null = null
+let employerClient: BlockchainClient
+let authorityClient: BlockchainClient
 
-export function getBlockchainClient(): BlockchainClient {
-  if (!blockchainClient) {
-    blockchainClient = new BlockchainClient()
+export function getEmployerBlockchainClient(): BlockchainClient {
+  if (!employerClient) {
+    employerClient =  new BlockchainClient(process.env.EMPLOYER_PRIVATE_KEY || '');
   }
-  return blockchainClient
+  return employerClient
+}
+
+export function getAuthorityClient(): BlockchainClient {
+  if (!authorityClient) {
+    authorityClient =  new BlockchainClient(process.env.AUTHORITY_PRIVATE_KEY || '');
+  }
+  return authorityClient
 }
