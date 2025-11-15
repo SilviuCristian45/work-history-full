@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is an employer
-    const { data: userData, error: userError } = await supabase.from("users").select("role").eq("id", user.id).single()
+    const { data: userData, error: userError } = await supabase.from("users").select("role, full_name").eq("id", user.id).single()
 
     if (userError || userData?.role !== "employer") {
       return NextResponse.json({ error: "Forbidden: Only employers can register work entries" }, { status: 403 })
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       salary: salary.toString(),
       startDate,
       endDate,
+      employer: userData.full_name,
     })
 
     // Store metadata in database

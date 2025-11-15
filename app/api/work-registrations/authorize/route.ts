@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is an authority
-    const { data: userData, error: userError } = await supabase.from("users").select("role").eq("id", user.id).single()
+    const { data: userData, error: userError } = await supabase.from("users").select("role, full_name").eq("id", user.id).single()
 
     if (userError || userData?.role !== "authority") {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
     // Authorize on blockchain
    // const blockchainClient = getBlockchainClient()
-   // const transaction = await blockchainClient.authorizeWorkRegistration(registration.tx_hash, approved)
+   // const transaction = await blockchainClient.authorizeWorkRegistration(registration.tx_hash, , userData.full_name)
 
     // Update registration in database
     const { data: updatedRegistration, error: updateError } = await supabase

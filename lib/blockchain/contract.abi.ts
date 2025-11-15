@@ -90,6 +90,11 @@ export const CONTRACT_ABI = [
           "internalType": "bool",
           "name": "approve",
           "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "authorityName",
+          "type": "string"
         }
       ],
       "name": "authorizeWork",
@@ -141,6 +146,16 @@ export const CONTRACT_ABI = [
           "internalType": "bytes32",
           "name": "txHash",
           "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "employerName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "authorizedBy",
+          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -200,6 +215,16 @@ export const CONTRACT_ABI = [
               "internalType": "bytes32",
               "name": "txHash",
               "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "employerName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "authorizedBy",
+              "type": "string"
             }
           ],
           "internalType": "struct WorkHistoryRegistry.WorkEntry[]",
@@ -241,6 +266,11 @@ export const CONTRACT_ABI = [
           "internalType": "bytes32",
           "name": "txHash",
           "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "employerName",
+          "type": "string"
         }
       ],
       "name": "registerWork",

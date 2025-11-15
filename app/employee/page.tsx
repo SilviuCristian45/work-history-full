@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { LogOut, Briefcase, DollarSign, Calendar } from "lucide-react"
 import ExportPdfButton from "@/components/ui/export-pdf-button"
 import GetQrButton from "@/components/ui/get-qr-button"
+import { BlockchainClient, getEmployeeClient } from "@/lib/blockchain/client"
 
 
 export default async function EmployeePage() {
@@ -29,23 +30,52 @@ export default async function EmployeePage() {
     redirect("/auth/login")
   }
 
-  // Fetch work history
-  const { data: workHistory, error: historyError } = await supabase
-    .from("work_registrations")
-    .select(`
-      *,
-      employer:employer_id (
-        full_name,
-        email
-      ),
-      authority:approved_by (
-        full_name
-      )
-    `)
-    .eq("employee_cnp", userData.cnp)
-    .order("start_date", { ascending: false })
+  console.log(userData.cnp)
+  const userCnp = userData?.cnp || '';
+  console.log(userCnp)
 
-  const history = workHistory || []
+  let history = []
+
+  try {
+     const client = getEmployeeClient()
+     const rawHistory = await client.getEmployeeHistory(userCnp);
+
+    const formattedHistory = rawHistory.map((entry: any, index: number) => ({
+      id: index, // pentru key în TableRow
+      employer: { full_name: entry[6] ?? 'unknown', email: "" }, // nu avem date employer pe blockchain
+      position: entry[0],
+      salary: Number(entry[1]), // BigInt -> number
+      start_date: new Date(Number(entry[2]) * 1000).toISOString(),
+      end_date: entry[3] !== 0n ? new Date(Number(entry[3]) * 1000).toISOString() : null,
+      status: ["pending", "approved", "rejected"][Number(entry[4])], // map enum -> string
+      tx_hash: entry[5]
+    }));
+
+    // Folosește formattedHistory în UI în loc de workHistory din Supabase
+    history = formattedHistory;
+    } catch (err) {
+      console.error(err)
+    } finally {
+      
+    }
+
+  // Fetch work history
+  // const { data: workHistory, error: historyError } = await supabase
+  //   .from("work_registrations")
+  //   .select(`
+  //     *,
+  //     employer:employer_id (
+  //       full_name,
+  //       email
+  //     ),
+  //     authority:approved_by (
+  //       full_name
+  //     )
+  //   `)
+  //   .eq("employee_cnp", userData.cnp)
+  //   .order("start_date", { ascending: false })
+
+ 
 
   // Calculate statistics
   const approvedRegistrations = history.filter((r) => r.status === "approved")

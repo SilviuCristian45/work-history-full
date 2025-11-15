@@ -1,3 +1,4 @@
+import { BlockchainClient, getEmployeeClient, getEmployerBlockchainClient } from "@/lib/blockchain/client"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -61,9 +62,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ cnp:
       throw registrationsError
     }
 
+    const employementDataBlockchain =  await getWorkHistoryByCNP(cnp)
+
+    console.log(employementDataBlockchain)
+
     return NextResponse.json({ history: registrations })
   } catch (error) {
     console.error("Error fetching work history:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+export async function getWorkHistoryByCNP(cnp: string) {
+  const client = getEmployeeClient()
+  return client.getEmployeeHistory(cnp)
 }
