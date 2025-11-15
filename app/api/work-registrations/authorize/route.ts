@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { getBlockchainClient } from "@/lib/blockchain/client"
+import { getAuthorityClient, getBlockchainClient, getEmployeeClient } from "@/lib/blockchain/client"
 import { NextResponse } from "next/server"
 
 // POST /api/work-registrations/authorize - Authorize a work registration
@@ -52,8 +52,12 @@ export async function POST(request: Request) {
     }
 
     // Authorize on blockchain
-   // const blockchainClient = getBlockchainClient()
-   // const transaction = await blockchainClient.authorizeWorkRegistration(registration.tx_hash, , userData.full_name)
+   const blockchainClient = getAuthorityClient()
+  //  const client = getEmployeeClient()
+  // const history = await client.getEmployeeHistory('5000612124949')
+  // console.log('-----------')
+  // console.log(history.length)
+   const transaction = await blockchainClient.authorizeWorkRegistration(registration.employee_cnp, registration.index, approved, userData.full_name)
 
     // Update registration in database
     const { data: updatedRegistration, error: updateError } = await supabase
@@ -74,7 +78,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       registration: updatedRegistration,
-      authorizationHash: '123132',
+      authorizationHash: transaction.hash,
     })
   } catch (error) {
     console.error("Error authorizing work registration:", error)

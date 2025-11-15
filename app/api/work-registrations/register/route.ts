@@ -1,4 +1,4 @@
-import { getEmployerBlockchainClient } from "@/lib/blockchain/client"
+import { getEmployeeClient, getEmployerBlockchainClient } from "@/lib/blockchain/client"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -58,6 +58,11 @@ export async function POST(request: Request) {
       employer: userData.full_name,
     })
 
+    const employeeClient = getEmployeeClient()
+    const history = await employeeClient.getEmployeeHistory(employeeCNP)
+    console.log(history)
+    console.log(history.length)
+    console.log(history.length-1)
     // Store metadata in database
     const { data: registration, error: insertError } = await supabase
       .from("work_registrations")
@@ -70,6 +75,7 @@ export async function POST(request: Request) {
         end_date: endDate || null,
         tx_hash: transaction.hash,
         status: "pending",
+        index: history.length - 1,
       })
       .select()
       .single()

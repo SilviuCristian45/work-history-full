@@ -55,7 +55,8 @@ export class BlockchainClient {
 
       // Wait for transaction confirmation
       const receipt = await tx.wait()
-
+      const event = receipt.logs.map( (it: any) => it)
+      console.log(event)
       console.log("[v0] Transaction confirmed. Block:", receipt.blockNumber)
 
       return {
@@ -72,12 +73,13 @@ export class BlockchainClient {
   /**
    * Authorize work registration on blockchain
    */
-  async authorizeWorkRegistration(registrationHash: string, approved: boolean, authority: string): Promise<BlockchainTransaction> {
+  async authorizeWorkRegistration(employeeCNP: string, index: number, approved: boolean, authority: string): Promise<BlockchainTransaction> {
     try {
-      console.log("[v0] Authorizing registration:", { registrationHash, approved })
+      console.log("[v0] Authorizing registration:", { employeeCNP, index, approved, authority })
+
 
       // Call smart contract method
-      const tx = await this.contract.authorizeWorkRegistration(registrationHash, approved, authority)
+      const tx = await this.contract.authorizeWork(employeeCNP, index, approved, authority)
 
       console.log("[v0] Authorization transaction sent. Hash:", tx.hash)
 
