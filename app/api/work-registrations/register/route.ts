@@ -1,4 +1,3 @@
-import { getEmployeeClient, getEmployerBlockchainClient } from "@/lib/blockchain/client"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is an employer
-    const { data: userData, error: userError } = await supabase.from("users").select("role, full_name").eq("id", user.id).single()
+    const { data: userData, error: userError } = await supabase.from("users").select("role").eq("id", user.id).single()
 
     if (userError || userData?.role !== "employer") {
       return NextResponse.json({ error: "Forbidden: Only employers can register work entries" }, { status: 403 })
@@ -47,22 +46,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Employee not found or does not belong to this employer" }, { status: 404 })
     }
 
-    //Register on blockchain
-    const blockchainClient = getEmployerBlockchainClient()
-    const transaction = await blockchainClient.registerWork({
-      employeeCNP,
-      position,
-      salary: salary.toString(),
-      startDate,
-      endDate,
-      employer: userData.full_name,
-    })
+    // Register on blockchain
+    // const blockchainClient = getBlockchainClient()
+    // const transaction = await blockchainClient.registerWork({
+    //   employeeCNP,
+    //   employerAddress: user.id,
+    //   position,
+    //   salary: salary.toString(),
+    //   startDate,
+    //   endDate,
+    // })
 
-    const employeeClient = getEmployeeClient()
-    const history = await employeeClient.getEmployeeHistory(employeeCNP)
-    console.log(history)
-    console.log(history.length)
-    console.log(history.length-1)
+    const mockTransactionHash = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`
+
     // Store metadata in database
     const { data: registration, error: insertError } = await supabase
       .from("work_registrations")
@@ -73,9 +69,8 @@ export async function POST(request: Request) {
         salary: Number.parseFloat(salary),
         start_date: startDate,
         end_date: endDate || null,
-        tx_hash: transaction.hash,
+        tx_hash: mockTransactionHash,
         status: "pending",
-        index: history.length - 1,
       })
       .select()
       .single()
@@ -84,10 +79,34 @@ export async function POST(request: Request) {
       throw insertError
     }
 
+    // Get employee user_id from CNP
+    const { data: employeeUser } = await supabase
+      .from("users")
+      .select("id, full_name")
+      .eq("cnp", employeeCNP)
+      .eq("role", "employee")
+      .single()
+
+    if (employeeUser) {
+      await supabase.from("notifications").insert({
+        user_id: employeeUser.id,
+        title: "New Work Registration",
+        message: `A new work registration has been created for you: ${position} with salary ${salary} RON/month`,
+        type: "work_registration",
+        metadata: {
+          registration_id: registration.id,
+          position,
+          salary,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      })
+    }
+
     return NextResponse.json(
       {
         registration,
-        transactionHash: transaction.hash,
+        transactionHash: mockTransactionHash,
       },
       { status: 201 },
     )

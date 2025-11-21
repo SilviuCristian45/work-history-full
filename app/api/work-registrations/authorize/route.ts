@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { getAuthorityClient, getBlockchainClient, getEmployeeClient } from "@/lib/blockchain/client"
+import { getBlockchainClient } from "@/lib/blockchain/client"
 import { NextResponse } from "next/server"
 
 // POST /api/work-registrations/authorize - Authorize a work registration
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is an authority
-    const { data: userData, error: userError } = await supabase.from("users").select("role, full_name").eq("id", user.id).single()
+    const { data: userData, error: userError } = await supabase.from("users").select("role").eq("id", user.id).single()
 
     if (userError || userData?.role !== "authority") {
       return NextResponse.json(
@@ -52,12 +52,8 @@ export async function POST(request: Request) {
     }
 
     // Authorize on blockchain
-   const blockchainClient = getAuthorityClient()
-  //  const client = getEmployeeClient()
-  // const history = await client.getEmployeeHistory('5000612124949')
-  // console.log('-----------')
-  // console.log(history.length)
-   const transaction = await blockchainClient.authorizeWorkRegistration(registration.employee_cnp, registration.index, approved, userData.full_name)
+   // const blockchainClient = getBlockchainClient()
+   // const transaction = await blockchainClient.authorizeWorkRegistration(registration.tx_hash, approved)
 
     // Update registration in database
     const { data: updatedRegistration, error: updateError } = await supabase
@@ -78,7 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       registration: updatedRegistration,
-      authorizationHash: transaction.hash,
+      authorizationHash: '123132',
     })
   } catch (error) {
     console.error("Error authorizing work registration:", error)

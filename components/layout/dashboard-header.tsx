@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 interface DashboardHeaderProps {
   title: string
@@ -17,10 +18,13 @@ export function DashboardHeader({ title, subtitle, onLogout }: DashboardHeaderPr
           <h1 className="text-2xl font-semibold">{title}</h1>
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={onLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </div>
       </div>
     </header>
   )

@@ -1,15 +1,14 @@
-import { Block, ethers } from "ethers"
+import { ethers } from "ethers"
 import { blockchainConfig } from "./config"
-import { CONTRACT_ABI } from "./contract.abi"
-import { v4 as uuidv4 } from "uuid";
+import { CONTRACT_ABI } from "./contract.abi.ts"
 
 export interface WorkRegistrationData {
   employeeCNP: string
+  employerAddress: string
   position: string
   salary: string
   startDate: string
   endDate?: string
-  employer: string
 }
 
 export interface BlockchainTransaction {
@@ -20,15 +19,19 @@ export interface BlockchainTransaction {
 
 export class BlockchainClient {
   private provider: ethers.JsonRpcProvider
-  private wallet: ethers.Wallet | undefined = undefined
+  private wallet: ethers.Wallet
   private contract: ethers.Contract
 
- constructor(privateKey: string | undefined) {
-  this.provider = new ethers.JsonRpcProvider(blockchainConfig.rpcUrl);
-  if (privateKey)
-    this.wallet = new ethers.Wallet(privateKey, this.provider);
-  this.contract = new ethers.Contract(blockchainConfig.contractAddress, CONTRACT_ABI, this.wallet);
-}
+  constructor() {
+    // Initialize provider
+    this.provider = new ethers.JsonRpcProvider(blockchainConfig.rpcUrl)
+
+    // Initialize wallet
+    this.wallet = new ethers.Wallet(blockchainConfig.walletPrivateKey, this.provider)
+
+    // Initialize contract
+    this.contract = new ethers.Contract(blockchainConfig.contractAddress, CONTRACT_ABI, this.wallet)
+  }
 
   /**
    * Register work entry on blockchain
@@ -37,26 +40,21 @@ export class BlockchainClient {
     try {
       console.log("[v0] Registering work on blockchain:", data)
 
-      const uniqueId = uuidv4();
-      const txHash = ethers.keccak256(ethers.toUtf8Bytes(uniqueId));
-
+      // Call smart contract method
       const tx = await this.contract.registerWork(
         data.employeeCNP,
+        data.employerAddress,
         data.position,
         ethers.parseUnits(data.salary, 0), // Convert salary to BigInt
-        Math.floor(new Date(data.startDate).getTime() / 1000),
-        data.endDate ? Math.floor(new Date(data.endDate).getTime() / 1000) : 0,
-        txHash,
-        data.employer,
-        { gasLimit: 2_000_000 } // ajustează după nevoie
+        new Date(data.startDate).getTime(),
+        data.endDate ? new Date(data.endDate).getTime() : 0,
       )
 
       console.log("[v0] Transaction sent. Hash:", tx.hash)
 
       // Wait for transaction confirmation
       const receipt = await tx.wait()
-      const event = receipt.logs.map( (it: any) => it)
-      console.log(event)
+
       console.log("[v0] Transaction confirmed. Block:", receipt.blockNumber)
 
       return {
@@ -73,13 +71,12 @@ export class BlockchainClient {
   /**
    * Authorize work registration on blockchain
    */
-  async authorizeWorkRegistration(employeeCNP: string, index: number, approved: boolean, authority: string): Promise<BlockchainTransaction> {
+  async authorizeWorkRegistration(registrationHash: string, approved: boolean): Promise<BlockchainTransaction> {
     try {
-      console.log("[v0] Authorizing registration:", { employeeCNP, index, approved, authority })
-
+      console.log("[v0] Authorizing registration:", { registrationHash, approved })
 
       // Call smart contract method
-      const tx = await this.contract.authorizeWork(employeeCNP, index, approved, authority)
+      const tx = await this.contract.authorizeWorkRegistration(registrationHash, approved)
 
       console.log("[v0] Authorization transaction sent. Hash:", tx.hash)
 
@@ -106,14 +103,8 @@ export class BlockchainClient {
     try {
       console.log("[v0] Getting employee history from blockchain for CNP:", cnp)
 
-      const readOnlyContract = new ethers.Contract(
-        blockchainConfig.contractAddress,
-        CONTRACT_ABI,
-        this.provider
-      );
-
-      const history = await readOnlyContract.getWorkHistory(cnp);
-
+      // Call smart contract view method
+      const history = await this.contract.getEmployeeHistory(cnp)
 
       console.log("[v0] Retrieved history:", history)
 
@@ -146,31 +137,16 @@ export class BlockchainClient {
    * Get wallet address
    */
   getWalletAddress(): string {
-    return this.wallet?.address || ''
+    return this.wallet.address
   }
 }
 
-let employerClient: BlockchainClient
-let authorityClient: BlockchainClient
-let employeeClient: BlockchainClient
+// Singleton instance
+let blockchainClient: BlockchainClient | null = null
 
-export function getEmployerBlockchainClient(): BlockchainClient {
-  if (!employerClient) {
-    employerClient =  new BlockchainClient(process.env.EMPLOYER_PRIVATE_KEY || '');
+export function getBlockchainClient(): BlockchainClient {
+  if (!blockchainClient) {
+    blockchainClient = new BlockchainClient()
   }
-  return employerClient
-}
-
-export function getAuthorityClient(): BlockchainClient {
-  if (!authorityClient) {
-    authorityClient =  new BlockchainClient(process.env.AUTHORITY_PRIVATE_KEY || '');
-  }
-  return authorityClient
-}
-
-export function getEmployeeClient(): BlockchainClient {
-  if (!employeeClient) {
-      employeeClient = new BlockchainClient(undefined)
-  }
-  return employeeClient;
+  return blockchainClient
 }
