@@ -2,14 +2,11 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error(
-      `[v0] Supabase environment variables are missing in middleware! URL: ${!!supabaseUrl}, Key: ${!!supabaseAnonKey}`,
-    )
-    // Allow request to proceed without auth if env vars are missing to prevent crash
+    console.warn("[v0] Supabase env vars not available in middleware. Bypassing auth checks.")
     return NextResponse.next({ request })
   }
 
@@ -38,14 +35,12 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname === "/auth" || request.nextUrl.pathname.startsWith("/auth/")
 
-  // Redirect unauthenticated users to login
   if (!user && !isAuthPage && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users from auth pages to their dashboard
   if (user && isAuthPage) {
     const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
 
